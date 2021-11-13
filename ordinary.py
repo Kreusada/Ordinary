@@ -10,7 +10,7 @@ safeparse() - return a bool based on whether the provided text is not provided i
 MAX_RANGE = 1114112
 DELIMETER = "-"
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 
 class OrdinalError(ValueError):
@@ -56,7 +56,7 @@ def encode(text: str, *, cutoff: int = None):
 
 def decode(text: str):
     """Decode Ordinary into standard text."""
-    text = DELIMETER.join(text.splitlines())
+    text = DELIMETER.join(map(str.strip, text.splitlines())).strip()
     parse(text)
     return "".join(map(lambda x: chr(int(x)), text.split(DELIMETER)))
 
@@ -67,31 +67,29 @@ def _main():
 
     does not use cutoff kwarg when encoding
     """
-    def inner():
-        import sys
-        argv = sys.argv[1:]
-        if argv:
-            if argv[0] not in ("encode", "decode"):
-                raise RuntimeError("Please provide 'encode' or 'decode' with arguments.")
-            if not argv[1:]:
-                raise RuntimeError(f"Please provide arguments for the {argv[0]} command.")
-            return globals()[argv[0]](" ".join(argv[1:]))
-        else:
-            command = input("Would you like to encode or decode?\n>>> ").lower()
-            if command not in ("encode", "decode"):
-                raise RuntimeError("Please only provide either encode or decode.")
-            text = input(f"Now type the text that you would like to {command}:\n>>> ")
-            return globals()[command](text)
-    
+    import sys
+
+    argv = sys.argv[1:]
+    if argv:
+        if argv[0] not in ("encode", "decode"):
+            raise RuntimeError("Please provide 'encode' or 'decode' with arguments.")
+        if not argv[1:]:
+            raise RuntimeError(f"Please provide arguments for the {argv[0]} command.")
+        return globals()[argv[0]](" ".join(argv[1:]))
+    else:
+        command = input("Would you like to encode or decode?\n>>> ").lower()
+        if command not in ("encode", "decode"):
+            raise RuntimeError("Please only provide either encode or decode.")
+        text = input(f"Now type the text that you would like to {command}:\n>>> ")
+        return globals()[command](text)
+
+
+if __name__ == "__main__":
     try:
-        code = inner()
+        code = _main()
     except (OrdinalError, RuntimeError) as e:
         print(str(e))
     except KeyboardInterrupt:
         print("~~")
     else:
         print("\n" + code)
-
-
-if __name__ == "__main__":
-    _main()
