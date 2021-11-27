@@ -10,12 +10,24 @@ safeparse() - return a bool based on whether the provided text is not provided i
 MAX_RANGE = 1114112
 DELIMETER = "-"
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 
 class OrdinalError(ValueError):
     pass
 
+def set_delimeter(delimeter: str = None, /) -> None:
+    """Sets the delimeter used by the encoder."""
+    if delimeter is None:
+        delimeter = "-"
+    else:
+        if not isinstance(delimeter, str):
+            raise TypeError("set_delimeter() only takes str")
+        if len(delimeter) != 1:
+            raise ValueError("delimeter length must be 1")
+
+    global DELIMETER
+    DELIMETER = delimeter
 
 def parse(text: str) -> None:
     """Parses the given Ordinary to make sure it is syntactically correct."""
