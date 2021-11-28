@@ -68,6 +68,69 @@ generate numeric strings otherwise referred to as "Ordinary strings".
     >>> False
     ```
 
+- `set_delimiter()`
+
+    Sets the module's delimiter to use when encoding and decoding. The delimiter
+    must meet the following criteria:
+
+    * Must be a string
+    * Must be a single character
+    * Must not be a digit
+
+    You can pass no argument to this function to reset it to the standard (`-`).
+
+    ```py
+    set_delimiter("C")
+    >>> None
+    encode("Hello world!")
+    >>> "72C101C108C108C111C32C119C111C114C108C100C33"
+    set_delimiter()
+    encode("Hello world!")
+    >>> "72-101-108-108-111-32-119-111-114-108-100-33"
+    ```
+
+- `get_delimiter()`
+
+    Gets the modules current delimiter.
+
+    ```py
+    get_delimiter()
+    >>> "-"
+    set_delimiter("C")
+    get_delimiter()
+    >>> "C"
+    ```
+
+- `temporary_delimiter()`
+
+    This function is to be used as a context manager. It sets the delimiter whilst
+    the context manager is open.
+
+    ```py
+    with temporary_delimiter("C"):
+        encode("Hello world!")
+        >>> "72C101C108C108C111C32C119C111C114C108C100C33"
+    encode("Hello world!")
+    >>> "72-101-108-108-111-32-119-111-114-108-100-33"
+    ```
+
+    You can also use the `after` kwarg, used to define the delimiter that is set
+    once the context manager has exited. It defaults to None, meaning it will remember
+    the previously set delimiter and will instead set it to such delimiter.
+
+    ```py
+    get_delimiter()
+    >>> "-"
+    with temporary_delimiter("C", after="D"):
+        ...
+    get_delimiter()
+    >>> "D"
+    with temporary_delimiter("C"):
+        ...
+    get_delimiter()
+    >>> "D"
+    ```
+
 ### Installation
 
 Install using the recommended installer, Pip.

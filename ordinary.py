@@ -4,35 +4,86 @@ decode() - decode Ordinary into standard text.
 encode() - encode a string into Ordinary.
 parse() - raises an OrdinalError if the provided text is not provided in Ordinary form.
 safeparse() - return a bool based on whether the provided text is not provided in Ordinary form.
+set_delimiter() - sets the delimiter used by the encoder.
+get_delimiter() - gets the set Ordinary delimiter.
+
+There's also the temporary_delimiter function, used to temporarily set the delimiter instead of making
+the change permanent. This should be used as a context manager. When exiting the context manager, the delimiter
+will be restored to its previous state, like so:
+
+with ordinary.temporary_delimiter("C"):
+    print(ordinary.get_delimiter())
+    >>> "C"
+    print(ordinary.encode("hello"))
+    >>> 72C101C108C108C111C32C119C111C114C108C100C33
+print(ordinary.get_delimiter())
+>>> "-"
 
 """
 
-MAX_RANGE = 1114112
-DELIMETER = "-"
+import contextlib
 
-__version__ = "1.2.0"
+MAX_RANGE = 1114112
+_delimiter = "-"
+__version__ = "2.0.0"
 
 
 class OrdinalError(ValueError):
     pass
 
-def set_delimeter(delimeter: str = None, /) -> None:
-    """Sets the delimeter used by the encoder."""
-    if delimeter is None:
-        delimeter = "-"
-    else:
-        if not isinstance(delimeter, str):
-            raise TypeError("set_delimeter() only takes str")
-        if len(delimeter) != 1:
-            raise ValueError("delimeter length must be 1")
 
-    global DELIMETER
-    DELIMETER = delimeter
+@contextlib.contextmanager
+def temporary_delimiter(delimiter: str, *, after: str = None):
+    """Set a temporary delimiter.
+
+    Ordinary's delimiter will be restored to
+    it's previous state after. Use this function
+    as a context manager.
+    """
+    global _delimiter
+    current = _delimiter
+    set_delimiter(delimiter)
+    try:
+        yield
+    finally:
+        if after is None:
+            _delimiter = current
+        else:
+            # We want to clarify this is as a result
+            # of the after kwarg, so we make this amendment :)
+            try:
+                set_delimiter(after)
+            except (TypeError, ValueError) as exc:
+                raise exc(f"after {exc}") from None
+
+
+del contextlib
+
+
+def set_delimiter(delimiter: str = None, /) -> None:
+    """Sets the delimiter used by the encoder."""
+    if delimiter is None:
+        delimiter = "-"
+    else:
+        if not isinstance(delimiter, str):
+            raise TypeError("delimiter must be str")
+        if len(delimiter) != 1:
+            raise ValueError("delimiter length must be 1")
+        if delimiter.isdigit():
+            raise ValueError("delimeter must be a non numeric character")
+    global _delimiter
+    _delimiter = delimiter
+
+
+def get_delimiter() -> str:
+    """Gets the set Ordinary delimiter."""
+    return _delimiter
+
 
 def parse(text: str) -> None:
     """Parses the given Ordinary to make sure it is syntactically correct."""
-    text = DELIMETER.join(text.splitlines())
-    split = text.split(DELIMETER)
+    text = _delimiter.join(text.splitlines())
+    split = text.split(_delimiter)
     for i in range(len(split)):
         if not (n := split[i]).isdigit():
             raise OrdinalError("value '%s' at position %s is not a digit" % (n, i))
@@ -59,49 +110,15 @@ def encode(text: str, *, cutoff: int = None):
     if not (cutoff is None or isinstance(cutoff, int)):
         raise ValueError("cutoff kwarg must be None or int")
     if cutoff is None or cutoff >= len(i):
-        return DELIMETER.join(i)
+        return _delimiter.join(i)
     ret = ""
     for x in [i[x : x + cutoff] for x in range(0, len(i), cutoff)]:
-        ret += DELIMETER.join(x) + "\n"
+        ret += _delimiter.join(x) + "\n"
     return ret
 
 
 def decode(text: str):
     """Decode Ordinary into standard text."""
-    text = DELIMETER.join(map(str.strip, text.splitlines())).strip()
+    text = _delimiter.join(map(str.strip, text.splitlines())).strip()
     parse(text)
-    return "".join(map(lambda x: chr(int(x)), text.split(DELIMETER)))
-
-
-def _main():
-    """
-    main script for ordinary
-
-    does not use cutoff kwarg when encoding
-    """
-    import sys
-
-    argv = sys.argv[1:]
-    if argv:
-        if argv[0] not in ("encode", "decode"):
-            raise RuntimeError("Please provide 'encode' or 'decode' with arguments.")
-        if not argv[1:]:
-            raise RuntimeError(f"Please provide arguments for the {argv[0]} command.")
-        return globals()[argv[0]](" ".join(argv[1:]))
-    else:
-        command = input("Would you like to encode or decode?\n>>> ").lower()
-        if command not in ("encode", "decode"):
-            raise RuntimeError("Please only provide either encode or decode.")
-        text = input(f"Now type the text that you would like to {command}:\n>>> ")
-        return globals()[command](text)
-
-
-if __name__ == "__main__":
-    try:
-        code = _main()
-    except (OrdinalError, RuntimeError) as e:
-        print(str(e))
-    except KeyboardInterrupt:
-        print("~~")
-    else:
-        print("\n" + code)
+    return "".join(map(lambda x: chr(int(x)), text.split(_delimiter)))
