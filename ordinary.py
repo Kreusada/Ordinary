@@ -25,7 +25,7 @@ import contextlib
 
 MAX_RANGE = 1114112
 _delimiter = "-"
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 
 
 class OrdinalError(ValueError):
@@ -54,7 +54,7 @@ def temporary_delimiter(delimiter: str, *, after: str = None):
             try:
                 set_delimiter(after)
             except (TypeError, ValueError) as exc:
-                raise exc(f"after {exc}") from None
+                raise exc.__class__(f"after {exc}") from None
 
 
 del contextlib
