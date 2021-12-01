@@ -131,6 +131,43 @@ generate numeric strings otherwise referred to as "Ordinary strings".
     >>> "D"
     ```
 
+- `load()`
+
+    Loads text from a file and converts, returning a string.
+
+    `fp` is a file-like object to extract from.
+
+    `mode` must be 'd' or 'e', 'e' standing for encode, 'd' standing for encode. These 
+    modes decide whether encode() or decode() is used on the string that is returned.
+
+    When using the mode 'e', add 'cutoff' as a keyword argument to be parsed into the
+    encode function.
+
+    Here's an example where loading the text would automatically encode:
+
+    ```py
+    with open("file", "r") as fp:
+        load(fp, mode="e")
+    ```
+
+    Same for decoding, just replace the `"e"` with `"d"`.
+
+- `dump()`
+
+    Convert and write ordinary/text to a file-like object (.write()).
+
+    This function works like `load()`, but there's also a positional argument
+    `text` which comes first, which is the text to write to the file. This argument
+    comes first.
+
+    ```py
+    with open("file", "r") as fp:
+        dump("Hello world!", fp, mode="e")
+    ```
+
+    The above example would write `72-101-108-108-111-32-119-111-114-108-100-33`
+    to the file object.
+
 ### Installation
 
 Install using the recommended installer, Pip.

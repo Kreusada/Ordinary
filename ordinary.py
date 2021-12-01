@@ -2,10 +2,15 @@
 
 decode() - decode Ordinary into standard text.
 encode() - encode a string into Ordinary.
+
+dump() - convert and write ordinary/text to a file-like object (.write()).
+load() - load ordinary/text from a file.
+
 parse() - raises an OrdinalError if the provided text is not provided in Ordinary form.
 safeparse() - return a bool based on whether the provided text is not provided in Ordinary form.
-set_delimiter() - sets the delimiter used by the encoder.
+
 get_delimiter() - gets the set Ordinary delimiter.
+set_delimiter() - sets the delimiter used by the encoder.
 
 There's also the temporary_delimiter function, used to temporarily set the delimiter instead of making
 the change permanent. This should be used as a context manager. When exiting the context manager, the delimiter
@@ -21,19 +26,42 @@ print(ordinary.get_delimiter())
 
 """
 
+__all__ = [
+    "MAX_RANGE",
+    "OrdinalError",
+    "__all__",
+    "__version__",
+    "decode",
+    "dump",
+    "encode",
+    "get_delimiter",
+    "load",
+    "parse",
+    "safeparse",
+    "set_delimiter",
+    "temporary_delimiter",
+]
+
 import contextlib
+from typing import Literal, Generator, Union
 
 MAX_RANGE = 1114112
 _delimiter = "-"
-__version__ = "2.0.1"
+__version__ = "2.1.0"
 
 
 class OrdinalError(ValueError):
     pass
 
 
+def __dir__():
+    return __all__
+
+
 @contextlib.contextmanager
-def temporary_delimiter(delimiter: str, *, after: str = None):
+def temporary_delimiter(
+    delimiter: str, *, after: Union[str, None] = None
+) -> Generator[None, None, None]:
     """Set a temporary delimiter.
 
     Ordinary's delimiter will be restored to
@@ -57,10 +85,7 @@ def temporary_delimiter(delimiter: str, *, after: str = None):
                 raise exc.__class__(f"after {exc}") from None
 
 
-del contextlib
-
-
-def set_delimiter(delimiter: str = None, /) -> None:
+def set_delimiter(delimiter: Union[str, None] = None, /) -> None:
     """Sets the delimiter used by the encoder."""
     if delimiter is None:
         delimiter = "-"
@@ -101,7 +126,7 @@ def safeparse(text: str) -> bool:
         return True
 
 
-def encode(text: str, *, cutoff: int = None):
+def encode(text: str, *, cutoff: Union[int, None] = None) -> str:
     """Encode a string into Ordinary.
 
     Use the cutoff kwarg to control the number of ords per row.
@@ -117,8 +142,59 @@ def encode(text: str, *, cutoff: int = None):
     return ret
 
 
-def decode(text: str):
+def decode(text: str) -> str:
     """Decode Ordinary into standard text."""
-    text = _delimiter.join(map(str.strip, text.splitlines())).strip()
+    text = text.strip()
+    text = _delimiter.join(map(str.strip, text.splitlines()))
     parse(text)
     return "".join(map(lambda x: chr(int(x)), text.split(_delimiter)))
+
+
+_mode_type = Literal["e", "d"]
+
+
+def dump(text, fp, /, mode: _mode_type, **kwds) -> None:
+    """Convert and write ordinary/text to a file-like object (.write()).
+
+    ``text`` is the string to dump into the ``fp``.
+    ``fp`` is a file-like object to write into.
+    ``mode`` must be 'd' or 'e', 'e' standing for encode, 'd' standing for encode.
+        These modes decide whether encode() or decode() is used on the ``text`` when writing.
+
+    When using the mode 'e', add 'cutoff' as a keyword argument to be parsed into the
+    encode function.
+    """
+    if mode == "e":
+        fp.write(encode(text, cutoff=kwds.get("cutoff", None)))
+    elif mode == "d":
+        fp.write(decode(text))
+    else:
+        raise ValueError(
+            "dump(mode=x): x must be 'd' for decode, or 'e' for encode, not '%s'" % mode
+        )
+
+
+def load(fp, /, mode: _mode_type, **kwds) -> str:
+    """Loads text from a file and converts, returning a string.
+
+    ``fp`` is a file-like object to extract from.
+    ``mode`` must be 'd' or 'e', 'e' standing for encode, 'd' standing for encode.
+        These modes decide whether encode() or decode() is used on the string
+        that is returned.
+
+    When using the mode 'e', add 'cutoff' as a keyword argument to be parsed into the
+    encode function.
+    """
+    read = fp.read()
+    if mode == "e":
+        return encode(read, cutoff=kwds.get("cutoff", None))
+    elif mode == "d":
+        return decode(read)
+    else:
+        raise ValueError(
+            "load(mode=x): x must be 'd' for decode, or 'e' for encode, not '%s'" % mode
+        )
+
+
+del contextlib
+del Literal, Generator, Union
