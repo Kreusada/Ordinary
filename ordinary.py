@@ -43,11 +43,11 @@ __all__ = [
 ]
 
 import contextlib
-from typing import Literal, Generator, Union
+from typing import Literal, Generator, Optional
 
 MAX_RANGE = 1114112
 _delimiter = "-"
-__version__ = "2.1.0"
+__version__ = "2.1.1"
 
 
 class OrdinalError(ValueError):
@@ -60,7 +60,7 @@ def __dir__():
 
 @contextlib.contextmanager
 def temporary_delimiter(
-    delimiter: str, *, after: Union[str, None] = None
+    delimiter: str, *, after: Optional[str] = None
 ) -> Generator[None, None, None]:
     """Set a temporary delimiter.
 
@@ -85,7 +85,7 @@ def temporary_delimiter(
                 raise exc.__class__(f"after {exc}") from None
 
 
-def set_delimiter(delimiter: Union[str, None] = None, /) -> None:
+def set_delimiter(delimiter: Optional[str] = None, /) -> None:
     """Sets the delimiter used by the encoder."""
     if delimiter is None:
         delimiter = "-"
@@ -126,7 +126,7 @@ def safeparse(text: str) -> bool:
         return True
 
 
-def encode(text: str, *, cutoff: Union[int, None] = None) -> str:
+def encode(text: str, *, cutoff: Optional[int] = None) -> str:
     """Encode a string into Ordinary.
 
     Use the cutoff kwarg to control the number of ords per row.
@@ -197,4 +197,4 @@ def load(fp, /, mode: _mode_type, **kwds) -> str:
 
 
 del contextlib
-del Literal, Generator, Union
+del Literal, Generator, Optional
